@@ -1,0 +1,37 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+
+  cloud:
+    config:
+      server:
+        git:
+          # This default repo satisfies the "default repository" bean.
+          # You can point it to any of your config repos; auth-service is fine.
+          uri: https://github.com/mhammadmaqsood/onecart-config-server.git
+          default-label: main
+          clone-on-start: true
+
+          # Additional per-service repos (routing by application name pattern)
+          repos:
+            auth-service:
+              uri: https://github.com/mhammadmaqsood/onecart-config-server.git
+              search-paths: onecart-config-auth-service
+              pattern:
+                - auth-service
+                - auth-service-*
+            api-gateway:
+              uri: https://github.com/mhammadmaqsood/onecart-config-server.git
+              search-paths: onecart-config-api-gateway
+              pattern:
+                - api-gateway
+                - api-gateway-*
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"

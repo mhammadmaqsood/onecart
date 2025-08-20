@@ -1,0 +1,44 @@
+# -------------------------
+# IDEs
+# -------------------------
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# -------------------------
+# OS junk
+# -------------------------
+.DS_Store
+Thumbs.db
+
+# -------------------------
+# Build artifacts
+# -------------------------
+.gradle/
+**/build/
+**/out/
+**/target/
+
+# -------------------------
+# Logs & dumps
+# -------------------------
+logs/
+*.log
+*.log.*
+hs_err_pid*
+replay_pid*
+
+# -------------------------
+# Spring profiles you keep local only
+# (adjust if you decide to keep local-only overrides)
+# -------------------------
+**/application-local.yml
+**/application-local.properties
+
+# -------------------------
+# Docker / temp data (optional)
+# -------------------------
+docker-data/
+tmp/
