@@ -8,3 +8,16 @@ spring:
       uri: http://localhost:8888
       label: main
       profile: dev
+    vault:
+      uri: http://127.0.0.1:8200
+      token: ${VAULT_TOKEN:root}  # dev only; real env uses AppRole/K8s
+      fail-fast: true
+      database:
+        enabled: true
+        backend: database
+        role: authdb-role
+      kv:
+        enabled: true
+        backend: secret
+        default-context: onecart
+        application-name: ${spring.application.name}

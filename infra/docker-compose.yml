@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7
+    container_name: onecart-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: onecart-vault
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    ports:
+      - "8200:8200"
+    command: ["server", "-dev"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-S", "http://127.0.0.1:8200/v1/sys/health", "-O", "-"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+volumes:
+  mysql_data:
