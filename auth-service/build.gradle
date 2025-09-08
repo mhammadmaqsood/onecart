@@ -23,6 +23,10 @@ dependencies {
 	// Redis (health now; refresh tokens later)
 	implementation "org.springframework.boot:spring-boot-starter-data-redis"
 
+	//JWT + BCrypt
+	implementation "com.nimbusds:nimbus-jose-jwt:9.37.3"
+	implementation "org.springframework.security:spring-security-crypto"
+
 	// Lombok
 	compileOnly "org.projectlombok:lombok"
 	annotationProcessor "org.projectlombok:lombok"
