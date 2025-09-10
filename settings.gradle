@@ -6,3 +6,5 @@ rootProject.name = "onecart-parent"
 include("config-server")
 include("auth-service")
 include("api-gateway")
+include 'onecart-common'
+

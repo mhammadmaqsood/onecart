@@ -1,5 +1,6 @@
 package com.cartify.authservice.service;
 
+import com.cartify.common.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,6 @@ public class RefreshTokenService {
     }
 
     private static String key(Long userId, String token) {
-        return "auth:rt:" + userId + ":" + token;
+        return Constants.REDIS_RT_PREFIX + userId + ":" + token;
     }
 }
