@@ -6,6 +6,7 @@ import com.cartify.authservice.security.JwtService;
 import com.cartify.authservice.web.dto.LoginRequest;
 import com.cartify.authservice.web.dto.RegisterRequest;
 import com.cartify.authservice.web.dto.TokenResponse;
+import com.cartify.common.error.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
@@ -43,9 +44,9 @@ public class AuthService {
                         ? userDao.findByUsername(loginRequest.getUsernameOrEmail())
                         : userDao.findByUsername(loginRequest.getUsernameOrEmail());
 
-        User user = userOpt.orElseThrow(() -> new IllegalArgumentException("Invalid Credentials"));
+        User user = userOpt.orElseThrow(() -> new BadRequestException("Invalid Credentials"));
         if(!BCrypt.checkpw(loginRequest.getPassword(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("Invalid Credentials");
+            throw new BadRequestException("Invalid Credentials");
         }
 
         String access = jwtService.createAccessToken(user.getId(), user.getUsername(), user.getEmail(), 3600);

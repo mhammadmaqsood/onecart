@@ -1,0 +1,29 @@
+plugins {
+    id 'java-library'     // library (not an app)
+}
+
+/* Inherit group/version, repos, toolchain, and BOMs from the root.
+ * Your root already applies dependency-management with the Spring Boot BOM,
+ * so we don't set versions here. */
+
+dependencies {
+    // expose basic Spring APIs & validation annotations to consumers
+    api 'org.springframework.boot:spring-boot-starter-web'
+    api 'org.springframework.boot:spring-boot-starter-validation'
+
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+    // lombok (optional but handy)
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
+    // keep your junit if you plan tests in this module
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+test {
+    useJUnitPlatform()
+}
