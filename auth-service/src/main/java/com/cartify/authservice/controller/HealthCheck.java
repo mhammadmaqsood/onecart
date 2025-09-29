@@ -2,10 +2,12 @@ package com.cartify.authservice.controller;
 
 import com.cartify.authservice.dao.UserDao;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class HealthCheck {
@@ -20,6 +22,7 @@ public class HealthCheck {
     @GetMapping("/health/db")
     public String db() {
         userDao.findById(-1); // harmless DB call
+        log.info("==========================DB Hit============================");
         return "db:ok";
     }
 
