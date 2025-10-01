@@ -1,5 +1,5 @@
 # ---- runtime only ----
-FROM eclipse-temurin:21-jre
+FROM registry.access.redhat.com/ubi9/openjdk-21-runtime
 WORKDIR /app
 
 # JAR will be provided by Jenkins (via oc start-build --from-file)
