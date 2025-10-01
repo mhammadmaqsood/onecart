@@ -59,7 +59,9 @@ pipeline {
       steps {
         sh '''
           set -eux
-          "$OC_BIN" start-build auth-service -n "$NAMESPACE" --from-dir=. --wait --follow
+          JAR_FILE=$(ls auth-service/build/libs/*.jar | head -n 1)
+          cp "$JAR_FILE" app.jar
+          "$OC_BIN" start-build auth-service -n "$NAMESPACE" --from-file=app.jar --wait --follow
         '''
       }
     }
