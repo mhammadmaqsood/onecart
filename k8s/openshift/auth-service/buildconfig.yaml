@@ -1,0 +1,29 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: auth-service
+  labels:
+    app: auth-service
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: auth-service
+  labels:
+    app: auth-service
+spec:
+  source:
+    type: Binary
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+      buildArgs:
+        - name: SERVICE
+          value: auth-service
+  output:
+    to:
+      kind: ImageStreamTag
+      name: auth-service:latest
+  triggers:
+    - type: ConfigChange
