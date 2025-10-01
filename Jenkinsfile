@@ -59,10 +59,14 @@ pipeline {
       steps {
         sh '''
           set -eux
+          # pick the built jar
           JAR_FILE=$(ls auth-service/build/libs/*.jar | head -n 1)
-          mkdir -p build-upload
+          # create a mini build context
+          rm -rf build-upload
+          mkdir build-upload
           cp "$JAR_FILE" build-upload/app.jar
           cp Dockerfile build-upload/Dockerfile
+          # send only jar + dockerfile to openshift
           "$OC_BIN" start-build auth-service -n "$NAMESPACE" --from-dir=build-upload --wait --follow
         '''
       }
