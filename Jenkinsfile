@@ -27,7 +27,7 @@ pipeline {
     stage('Install oc CLI') {
       steps {
         sh '''
-          set -euxo pipefail
+          set -eux
           if [ ! -x "$OC_BIN" ]; then
             mkdir -p "$(dirname "$OC_BIN")"
             curl -L -o oc.tar.gz https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz
@@ -58,7 +58,7 @@ pipeline {
     stage('Build Image in OpenShift') {
       steps {
         sh '''
-          set -euxo pipefail
+          set -eux
           "$OC_BIN" start-build auth-service -n "$NAMESPACE" --from-dir=. --wait --follow
         '''
       }
