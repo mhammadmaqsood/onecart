@@ -19,8 +19,8 @@ spec:
     dockerStrategy:
       dockerfilePath: Dockerfile
       buildArgs:
-        - name: SERVICE
-          value: auth-service
+        - name: JAR_FILE
+          value: app.jar
   output:
     to:
       kind: ImageStreamTag
