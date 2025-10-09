@@ -2,8 +2,12 @@ pipeline {
   agent any
   options { timestamps() }
 
+  parameters {
+    choice(name: 'SERVICE', choices: ['auth-service','config-server'], description: 'Which service to build & deploy')
+  }
+
   environment {
-    SERVICE      = 'auth-service'
+    SERVICE      = "${params.SERVICE}"
     NAMESPACE    = 'hammadmaqsood135-dev'
     OCP_API_URL  = 'https://api.rm3.7wse.p1.openshiftapps.com:6443'
     OC_BIN       = "${WORKSPACE}/.oc/oc"
@@ -50,8 +54,8 @@ pipeline {
 
     stage('Apply Manifests') {
       steps {
-        sh '"$OC_BIN" apply -f k8s/openshift/auth-service/buildconfig.yaml -n "$NAMESPACE"'
-        sh '"$OC_BIN" apply -f k8s/openshift/auth-service/deployment.yaml -n "$NAMESPACE"'
+        sh '"$OC_BIN" apply -f k8s/openshift/${SERVICE}/buildconfig.yaml -n "$NAMESPACE"'
+        sh '"$OC_BIN" apply -f k8s/openshift/${SERVICE}/deployment.yaml -n "$NAMESPACE"'
       }
     }
 
@@ -59,23 +63,39 @@ pipeline {
       steps {
         sh '''
           set -eux
-          # pick the built jar
-          JAR_FILE=$(ls auth-service/build/libs/*.jar | head -n 1)
-          # create a mini build context
+          # pick the built jar for the selected module
+          JAR_FILE=$(ls ${SERVICE}/build/libs/*.jar | head -n 1)
+
+          # tiny build context with only jar + Dockerfile
           rm -rf build-upload
           mkdir build-upload
           cp "$JAR_FILE" build-upload/app.jar
           cp Dockerfile build-upload/Dockerfile
-          # send only jar + dockerfile to openshift
-          "$OC_BIN" start-build auth-service -n "$NAMESPACE" --from-dir=build-upload --wait --follow
+
+          # start build (name matches service)
+          BUILD_NAME=$("$OC_BIN" start-build "${SERVICE}" -n "$NAMESPACE" --from-dir=build-upload -o name | sed 's#.*/##')
+          echo "Started build: $BUILD_NAME"
+
+          # stream logs, then wait up to 15m for completion
+          "$OC_BIN" logs -f "build/$BUILD_NAME" -n "$NAMESPACE" || true
+          if ! "$OC_BIN" wait --for=condition=Complete "build/$BUILD_NAME" -n "$NAMESPACE" --timeout=15m; then
+            echo "Build did not complete. Diagnostics..."
+            "$OC_BIN" get build "$BUILD_NAME" -n "$NAMESPACE" -o yaml || true
+            POD_NAME=$("$OC_BIN" get pod -n "$NAMESPACE" -l "openshift.io/build.name=$BUILD_NAME" -o jsonpath='{.items[0].metadata.name}' || true)
+            if [ -n "${POD_NAME:-}" ]; then
+              "$OC_BIN" describe pod "$POD_NAME" -n "$NAMESPACE" || true
+              "$OC_BIN" logs "$POD_NAME" -n "$NAMESPACE" --all-containers=true --tail=200 || true
+            fi
+            exit 1
+          fi
         '''
       }
     }
 
     stage('Deploy & Rollout') {
       steps {
-        sh '"$OC_BIN" rollout restart deployment/auth-service -n "$NAMESPACE" || true'
-        sh '"$OC_BIN" rollout status deployment/auth-service -n "$NAMESPACE" --timeout=5m'
+        sh '"$OC_BIN" rollout restart deployment/${SERVICE} -n "$NAMESPACE" || true'
+        sh '"$OC_BIN" rollout status deployment/${SERVICE} -n "$NAMESPACE" --timeout=5m'
       }
     }
   }
