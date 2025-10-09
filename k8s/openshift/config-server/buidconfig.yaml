@@ -1,0 +1,29 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: config-server
+  labels:
+    app: config-server
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: config-server
+  labels:
+    app: config-server
+spec:
+  source:
+    type: Binary
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+      buildArgs:
+        - name: JAR_FILE
+          value: app.jar
+  output:
+    to:
+      kind: ImageStreamTag
+      name: config-server:latest
+  triggers:
+    - type: ConfigChange
