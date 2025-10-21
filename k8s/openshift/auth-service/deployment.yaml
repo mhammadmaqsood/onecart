@@ -21,8 +21,22 @@ spec:
           ports:
             - containerPort: 8080
           env:
+            # active Spring profile
             - name: SPRING_PROFILES_ACTIVE
               value: "dev"
+
+            # internal Config Server URL (cluster service name + port)
+            - name: SPRING_CLOUD_CONFIG_URI
+              value: "http://config-server:8888"
+
+            # optional but useful: wait a bit for config-server readiness
+            - name: SPRING_CLOUD_CONFIG_FAIL_FAST
+              value: "true"
+            - name: SPRING_CLOUD_CONFIG_RETRY_MAX_ATTEMPTS
+              value: "10"
+            - name: SPRING_CLOUD_CONFIG_RETRY_INITIAL_INTERVAL
+              value: "2000"
+
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
