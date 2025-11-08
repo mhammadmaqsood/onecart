@@ -3,7 +3,7 @@ pipeline {
   options { timestamps() }
 
   parameters {
-    choice(name: 'SERVICE', choices: ['auth-service','config-server'], description: 'Which service to build & deploy')
+    choice(name: 'SERVICE', choices: ['auth-service','config-server','vault'], description: 'Which service to build & deploy')
   }
 
   environment {
@@ -20,8 +20,15 @@ pipeline {
 
     stage('Gradle Test & Package') {
       steps {
-        sh 'chmod +x ./gradlew || true'
-        sh "./gradlew :${SERVICE}:clean :${SERVICE}:test :${SERVICE}:bootJar --no-daemon"
+        sh '''
+          set -eux
+          if [ "${SERVICE}" != "vault" ]; then
+            chmod +x ./gradlew || true
+            ./gradlew :${SERVICE}:clean :${SERVICE}:test :${SERVICE}:bootJar --no-daemon
+          else
+            echo "Skipping Gradle for vault"
+          fi
+        '''
       }
       post {
         always { junit testResults: "${SERVICE}/build/test-results/test/*.xml", allowEmptyResults: true }
@@ -48,35 +55,41 @@ pipeline {
       steps {
         withCredentials([string(credentialsId: 'ocp-token', variable: 'OCP_TOKEN')]) {
           sh '"$OC_BIN" login "$OCP_API_URL" --token="$OCP_TOKEN"'
+          sh '"$OC_BIN" project "$NAMESPACE"'
         }
       }
     }
 
     stage('Apply Manifests') {
       steps {
-        sh '"$OC_BIN" apply -f k8s/openshift/${SERVICE}/buildconfig.yaml -n "$NAMESPACE"'
-        sh '"$OC_BIN" apply -f k8s/openshift/${SERVICE}/deployment.yaml -n "$NAMESPACE"'
+        sh '''
+          set -eux
+          if [ "${SERVICE}" = "vault" ]; then
+            "$OC_BIN" apply -f k8s/openshift/vault/configmap.yaml   -n "$NAMESPACE"
+            "$OC_BIN" apply -f k8s/openshift/vault/statefulset.yaml -n "$NAMESPACE"
+          else
+            "$OC_BIN" apply -f k8s/openshift/${SERVICE}/buildconfig.yaml -n "$NAMESPACE"
+            "$OC_BIN" apply -f k8s/openshift/${SERVICE}/deployment.yaml  -n "$NAMESPACE"
+          fi
+        '''
       }
     }
 
     stage('Build Image in OpenShift') {
+      when { expression { return params.SERVICE != 'vault' } }
       steps {
         sh '''
           set -eux
-          # pick the built jar for the selected module
           JAR_FILE=$(ls ${SERVICE}/build/libs/*.jar | head -n 1)
 
-          # tiny build context with only jar + Dockerfile
           rm -rf build-upload
           mkdir build-upload
           cp "$JAR_FILE" build-upload/app.jar
           cp Dockerfile build-upload/Dockerfile
 
-          # start build (name matches service)
           BUILD_NAME=$("$OC_BIN" start-build "${SERVICE}" -n "$NAMESPACE" --from-dir=build-upload -o name | sed 's#.*/##')
           echo "Started build: $BUILD_NAME"
 
-          # stream logs, then wait up to 15m for completion
           "$OC_BIN" logs -f "build/$BUILD_NAME" -n "$NAMESPACE" || true
           if ! "$OC_BIN" wait --for=condition=Complete "build/$BUILD_NAME" -n "$NAMESPACE" --timeout=15m; then
             echo "Build did not complete. Diagnostics..."
@@ -94,8 +107,17 @@ pipeline {
 
     stage('Deploy & Rollout') {
       steps {
-        sh '"$OC_BIN" rollout restart deployment/${SERVICE} -n "$NAMESPACE" || true'
-        sh '"$OC_BIN" rollout status deployment/${SERVICE} -n "$NAMESPACE" --timeout=5m'
+        sh '''
+          set -eux
+          if [ "${SERVICE}" = "vault" ]; then
+            # StatefulSet rollout (no restart needed)
+            "$OC_BIN" rollout status statefulset/vault -n "$NAMESPACE" --timeout=10m || true
+            "$OC_BIN" get pods -l app=vault -n "$NAMESPACE" -o wide
+          else
+            "$OC_BIN" rollout restart deployment/${SERVICE} -n "$NAMESPACE" || true
+            "$OC_BIN" rollout status  deployment/${SERVICE} -n "$NAMESPACE" --timeout=5m
+          fi
+        '''
       }
     }
   }
