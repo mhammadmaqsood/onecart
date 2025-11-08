@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
         - name: vault
-          image: docker.io/hashicorp/vault:1.17
+          image: default-route-openshift-image-registry.apps.rm3.7wse.p1.openshiftapps.com/hammadmaqsood135-dev/vault:1.17
+          imagePullPolicy: IfNotPresent
           args: ["server", "-config=/vault/config/vault.hcl"]
           ports:
             - containerPort: 8200
