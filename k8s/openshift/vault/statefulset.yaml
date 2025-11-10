@@ -17,30 +17,35 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
-        fsGroup: 1008450000
+        fsGroup: 1008450000           # from your namespace's allowed SCC range
         fsGroupChangePolicy: OnRootMismatch
       volumes:
         - name: config
           configMap:
             name: vault-config
         - name: data
-          emptyDir: {}
+          emptyDir: {}                # dev-friendly; no PVC hassle
       containers:
         - name: vault
           image: image-registry.openshift-image-registry.svc:5000/hammadmaqsood135-dev/vault:1.17
           imagePullPolicy: IfNotPresent
-          # run Vault directly (bypass entrypoint so it doesn't start a second server)
-          command: ["/usr/local/bin/vault"]
-          args: ["server", "-config=/vault/config/vault.hcl"]
+          # Let the image's entrypoint run "vault server -config=/vault/config/vault.hcl"
           env:
             - name: VAULT_ADDR
               value: "http://127.0.0.1:8200"
+            - name: SKIP_CHOWN
+              value: "true"           # prevent entrypoint from chown-ing ConfigMap mount
+            - name: SKIP_SETCAP
+              value: "true"           # prevent setting CAP_SETFCAP (blocked by SCC)
+            # (optional but nice) avoid the api_addr warning:
+            - name: VAULT_API_ADDR
+              value: "http://vault:8200"
           ports:
             - name: http
               containerPort: 8200
           securityContext:
             allowPrivilegeEscalation: false
-            runAsNonRoot: true
+            runAsNonRoot: true        # do NOT set runAsUser; OCP assigns a valid UID
           volumeMounts:
             - name: config
               mountPath: /vault/config
