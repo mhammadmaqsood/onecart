@@ -6,12 +6,9 @@ metadata:
     app: vault
 data:
   vault.hcl: |-
-    # Vault configuration for OpenShift deployment
     disable_mlock = true
     ui = true
-
-    # Prevent Vault from attempting to chown files from read-only ConfigMap
-    disable_chown = true
+    disable_chown = true  # 👈 VERY important for OpenShift read-only ConfigMap mounts
 
     storage "file" {
       path = "/vault/data"
