@@ -15,17 +15,17 @@ spec:
       labels:
         app: vault
     spec:
-      # OpenShift SCC-friendly: let platform assign UID; use an allowed fsGroup
+      # OCP SCC-friendly: let OCP pick UID; provide an allowed fsGroup
       securityContext:
         runAsNonRoot: true
-        fsGroup: 1008450000
+        fsGroup: 1008450000            # from your SCC allowed range
         fsGroupChangePolicy: OnRootMismatch
       volumes:
         - name: config
           configMap:
             name: vault-config
         - name: data
-          emptyDir: {}               # dev-friendly; avoids PVC issues
+          emptyDir: {}                 # dev-friendly storage (no PVC headaches)
       containers:
         - name: vault
           image: image-registry.openshift-image-registry.svc:5000/hammadmaqsood135-dev/vault:1.17
@@ -34,12 +34,17 @@ spec:
           env:
             - name: VAULT_ADDR
               value: "http://127.0.0.1:8200"
+            # ↓↓↓ prevent entrypoint from doing chown/setcap (both fail in OCP)
+            - name: SKIP_CHOWN
+              value: "true"
+            - name: SKIP_SETCAP
+              value: "true"
           ports:
             - name: http
               containerPort: 8200
           securityContext:
             allowPrivilegeEscalation: false
-            runAsNonRoot: true        # do NOT set runAsUser; OpenShift will choose a valid one
+            runAsNonRoot: true          # do NOT set runAsUser; OCP will choose a valid one
           volumeMounts:
             - name: config
               mountPath: /vault/config
