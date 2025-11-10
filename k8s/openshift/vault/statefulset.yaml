@@ -15,11 +15,10 @@ spec:
       labels:
         app: vault
     spec:
-      # Let a non-root Vault process write to mounted volumes
+      # OpenShift SCC-friendly: let platform assign UID; use an allowed fsGroup
       securityContext:
         runAsNonRoot: true
-        runAsUser: 10001
-        fsGroup: 10001
+        fsGroup: 1008450000
         fsGroupChangePolicy: OnRootMismatch
       volumes:
         - name: config
@@ -39,9 +38,8 @@ spec:
             - name: http
               containerPort: 8200
           securityContext:
-            runAsNonRoot: true
-            runAsUser: 10001
             allowPrivilegeEscalation: false
+            runAsNonRoot: true        # do NOT set runAsUser; OpenShift will choose a valid one
           volumeMounts:
             - name: config
               mountPath: /vault/config
