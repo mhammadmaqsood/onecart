@@ -29,13 +29,12 @@ spec:
         - name: vault
           image: image-registry.openshift-image-registry.svc:5000/hammadmaqsood135-dev/vault:1.17
           imagePullPolicy: IfNotPresent
+          # run Vault directly (bypass entrypoint so it doesn't start a second server)
+          command: ["/usr/local/bin/vault"]
+          args: ["server", "-config=/vault/config/vault.hcl"]
           env:
             - name: VAULT_ADDR
               value: "http://127.0.0.1:8200"
-            - name: SKIP_CHOWN
-              value: "true"
-            - name: SKIP_SETCAP
-              value: "true"
           ports:
             - name: http
               containerPort: 8200

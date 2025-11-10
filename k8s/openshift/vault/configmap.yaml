@@ -8,7 +8,6 @@ data:
   vault.hcl: |-
     disable_mlock = true
     ui = true
-    disable_chown = true  # 👈 VERY important for OpenShift read-only ConfigMap mounts
 
     storage "file" {
       path = "/vault/data"
